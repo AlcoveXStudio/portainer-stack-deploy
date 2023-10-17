@@ -27,6 +27,7 @@ export class PortainerApi {
     this.axiosInstance = axios.create({
       baseURL: `${host}/api`
     })
+    console.log(this.axiosInstance.defaults.baseURL)
   }
 
   async login({ username, password }: { username: string; password: string }): Promise<void> {
