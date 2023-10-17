@@ -1,3 +1,4 @@
+import * as core from '@actions/core'
 import axios from 'axios'
 
 type EnvVariables = Array<{
@@ -47,6 +48,8 @@ export class PortainerApi {
   }
 
   async createStack(params: CreateStackParams, body: CreateStackBody): Promise<void> {
+    core.debug(`Creating stack with params: ${JSON.stringify(params)}`)
+    core.debug(this.axiosInstance.toString());
     await this.axiosInstance.post('/stacks/create/standalone/string', body, { params })
   }
 
