@@ -18,7 +18,7 @@ type DeployStack = {
 
 enum StackType {
   SWARM = 1,
-  COMPOSE = 2
+  COMPOSE = 2,
 }
 
 function generateNewStackDefinition(
@@ -57,7 +57,7 @@ export async function deployStack({
   stackName,
   stackDefinitionFile,
   templateVariables,
-  image
+  image,
 }: DeployStack): Promise<void> {
   const portainerApi = new PortainerApi(portainerHost);
 
@@ -71,7 +71,7 @@ export async function deployStack({
   core.info('Logging in to Portainer instance...');
   await portainerApi.login({
     username,
-    password
+    password,
   });
 
   try {
@@ -84,11 +84,11 @@ export async function deployStack({
       await portainerApi.updateStack(
         existingStack.Id,
         {
-          endpointId: existingStack.EndpointId
+          endpointId: existingStack.EndpointId,
         },
         {
           env: existingStack.Env,
-          stackFileContent: stackDefinitionToDeploy
+          stackFileContent: stackDefinitionToDeploy,
         }
       );
       core.info('Successfully updated existing stack');
@@ -101,12 +101,12 @@ export async function deployStack({
         {
           type: swarmId ? StackType.SWARM : StackType.COMPOSE,
           method: 'string',
-          endpointId
+          endpointId,
         },
         {
           name: stackName,
           stackFileContent: stackDefinitionToDeploy,
-          swarmID: swarmId ? swarmId : undefined
+          swarmID: swarmId ? swarmId : undefined,
         }
       );
       core.info(`Successfully created new stack with name: ${stackName}`);
