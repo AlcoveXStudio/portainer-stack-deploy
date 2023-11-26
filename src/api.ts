@@ -24,14 +24,14 @@ export class PortainerApi {
 
   constructor(host: string) {
     this.axiosInstance = axios.create({
-      baseURL: `${host}/api`
+      baseURL: `${host}/api`,
     })
   }
 
   async login({ username, password }: { username: string; password: string }): Promise<void> {
     const { data } = await this.axiosInstance.post<{ jwt: string }>('/auth', {
       username,
-      password
+      password,
     })
     this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`
   }

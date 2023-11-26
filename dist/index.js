@@ -15,13 +15,13 @@ const axios_1 = __importDefault(__nccwpck_require__(6545));
 class PortainerApi {
     constructor(host) {
         this.axiosInstance = axios_1.default.create({
-            baseURL: `${host}/api`
+            baseURL: `${host}/api`,
         });
     }
     async login({ username, password }) {
         const { data } = await this.axiosInstance.post('/auth', {
             username,
-            password
+            password,
         });
         this.axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${data.jwt}`;
     }
@@ -34,7 +34,7 @@ class PortainerApi {
         return data;
     }
     async createStack(params, body) {
-        await this.axiosInstance.post('/stacks', body, { params });
+        await this.axiosInstance.post('/stacks/create/standalone/string', body, { params });
     }
     async updateStack(id, params, body) {
         await this.axiosInstance.put(`/stacks/${id}`, body, { params });
@@ -107,14 +107,14 @@ function generateNewStackDefinition(stackDefinitionFile, templateVariables, imag
     core.info(`Inserting image ${image} into the stack definition`);
     return stackDefinition.replace(new RegExp(`${imageWithoutTag}(:.*)?\n`), `${image}\n`);
 }
-async function deployStack({ portainerHost, username, password, swarmId, endpointId, stackName, stackDefinitionFile, templateVariables, image }) {
+async function deployStack({ portainerHost, username, password, swarmId, endpointId, stackName, stackDefinitionFile, templateVariables, image, }) {
     const portainerApi = new api_1.PortainerApi(portainerHost);
     const stackDefinitionToDeploy = generateNewStackDefinition(stackDefinitionFile, templateVariables, image);
     core.debug(stackDefinitionToDeploy);
     core.info('Logging in to Portainer instance...');
     await portainerApi.login({
         username,
-        password
+        password,
     });
     try {
         const allStacks = await portainerApi.getStacks();
@@ -123,23 +123,26 @@ async function deployStack({ portainerHost, username, password, swarmId, endpoin
             core.info(`Found existing stack with name: ${stackName}`);
             core.info('Updating existing stack...');
             await portainerApi.updateStack(existingStack.Id, {
-                endpointId: existingStack.EndpointId
+                endpointId: existingStack.EndpointId,
             }, {
                 env: existingStack.Env,
-                stackFileContent: stackDefinitionToDeploy
+                stackFileContent: stackDefinitionToDeploy,
             });
             core.info('Successfully updated existing stack');
         }
         else {
+            if (!endpointId) {
+                throw new Error('Endpoint ID is required');
+            }
             core.info('Deploying new stack...');
             await portainerApi.createStack({
                 type: swarmId ? StackType.SWARM : StackType.COMPOSE,
                 method: 'string',
-                endpointId
+                endpointId,
             }, {
                 name: stackName,
                 stackFileContent: stackDefinitionToDeploy,
-                swarmID: swarmId ? swarmId : undefined
+                swarmID: swarmId ? swarmId : undefined,
             });
             core.info(`Successfully created new stack with name: ${stackName}`);
         }
@@ -197,31 +200,31 @@ const deployStack_1 = __nccwpck_require__(2090);
 async function run() {
     try {
         const portainerHost = core.getInput('portainer-host', {
-            required: true
+            required: true,
         });
         const username = core.getInput('username', {
-            required: true
+            required: true,
         });
         const password = core.getInput('password', {
-            required: true
+            required: true,
         });
         const swarmId = core.getInput('swarm-id', {
-            required: false
+            required: false,
         });
         const endpointId = core.getInput('endpoint-id', {
-            required: false
+            required: false,
         });
         const stackName = core.getInput('stack-name', {
-            required: true
+            required: true,
         });
         const stackDefinitionFile = core.getInput('stack-definition', {
-            required: true
+            required: true,
         });
         const templateVariables = core.getInput('template-variables', {
-            required: false
+            required: false,
         });
         const image = core.getInput('image', {
-            required: false
+            required: false,
         });
         await (0, deployStack_1.deployStack)({
             portainerHost,
@@ -232,14 +235,14 @@ async function run() {
             stackName,
             stackDefinitionFile,
             templateVariables: templateVariables ? JSON.parse(templateVariables) : undefined,
-            image
+            image,
         });
         core.info('✅ Deployment done');
     }
     catch (error) {
         if (axios_1.default.isAxiosError(error) && error.response) {
-            const { status, data, config: { url, method } } = error.response;
-            return core.setFailed(`AxiosError HTTP Status ${status} (${method} ${url}): ${data}`);
+            const { status, data, config: { url, method }, } = error.response;
+            return core.setFailed(`AxiosError HTTP Status ${status} (${method} ${url}): ${JSON.stringify(data)}`);
         }
         return core.setFailed(error);
     }
